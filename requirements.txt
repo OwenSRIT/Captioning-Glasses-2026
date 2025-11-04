@@ -1,5 +1,6 @@
 torch
 numpy
 SpeechRecognition
+PyAudio
 argparse
 openai-whisper
