@@ -12,7 +12,7 @@ import uvicorn
 from concurrent.futures import ThreadPoolExecutor
 
 parser = argparse.ArgumentParser(description="Real-time RTSP transcription hub.")
-parser.add_argument("--model", default="tiny", choices=["tiny", "base", "small", "medium", "large", "turbo"], help="Whisper model to use.")
+parser.add_argument("--model", default="base", choices=["tiny", "base", "small", "medium", "large", "turbo"], help="Whisper model to use.")
 parser.add_argument("--non_english", action="store_true", help="Don't force the English model if it's smaller than 'large'.")
 parser.add_argument("--phrase_timeout", default=1.5, type=float, help="Silence gap (sec) to trigger transcription.")
 parser.add_argument("--vad_threshold", default=0.5, type=float, help="VAD sensitivity (0.1 to 1.0) for speech detection.")
@@ -64,6 +64,7 @@ async def transcribe_rtsp(websocket: WebSocket):
     process = (
         ffmpeg
         .input(args.rtsp_url, rtsp_transport='tcp')
+        #.input("/home/sizzlyo/Downloads/ezyZip.wav")
         .output('pipe:', format='f32le', acodec='pcm_f32le', ac=1, ar=str(SAMPLE_RATE))
         .run_async(pipe_stdout=True, pipe_stderr=True)
     )
@@ -83,7 +84,9 @@ async def transcribe_rtsp(websocket: WebSocket):
     try:
         while True:
             raw_bytes = process.stdout.read(CHUNK_SIZE * 4)
-            if not raw_bytes: break
+            if not raw_bytes: 
+                print("No audio recieved. Exiting...")
+                break
 
             #process audio every chunk for VAD and YAMNet
             audio_chunk = np.frombuffer(raw_bytes, np.float32)
@@ -137,4 +140,4 @@ async def websocket_endpoint(websocket: WebSocket):
     await transcribe_rtsp(websocket)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=33333)
